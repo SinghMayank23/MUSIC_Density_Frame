@@ -11,6 +11,7 @@
 #include "grid_info.h"
 #include "eos.h"
 #include "advance.h"
+#include "density_frame.h"
 #include "hydro_source_base.h"
 #include "pretty_ostream.h"
 #include "HydroinfoMUSIC.h"
@@ -24,6 +25,7 @@ class Evolve {
 
     Cell_info grid_info;
     Advance advance;
+    Density_Frame density_frame;
     pretty_ostream music_message;
 
     // simulation information
@@ -45,6 +47,9 @@ class Evolve {
                  SCGrid &arena_future, HydroinfoMUSIC &hydro_info_ptr);
 
     void AdvanceRK(double tau, GridPointer &arena_prev,
+                   GridPointer &arena_current, GridPointer &arena_future);
+
+    void AdvanceDF(double tau, GridPointer &arena_prev,
                    GridPointer &arena_current, GridPointer &arena_future);
 
     int FreezeOut_equal_tau_Surface(double tau, SCGrid &arena_current);

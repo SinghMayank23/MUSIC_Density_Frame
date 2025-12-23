@@ -27,7 +27,8 @@ using Util::hbarc;
 Evolve::Evolve(const EOS &eosIn, const InitData &DATA_in,
                std::shared_ptr<HydroSourceBase> hydro_source_ptr_in) :
     eos(eosIn), DATA(DATA_in),
-    grid_info(DATA_in, eosIn), advance(eosIn, DATA_in, hydro_source_ptr_in) {
+    grid_info(DATA_in, eosIn), advance(eosIn, DATA_in, hydro_source_ptr_in),
+    density_frame(eosIn, DATA_in) {
 
     rk_order  = DATA_in.rk_order;
     if (DATA.freezeOutMethod == 4) {
@@ -249,9 +250,20 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
             }
         }
 
-        /* execute rk steps */
         // all the evolution are at here !!!
-        AdvanceRK(tau, ap_prev, ap_current, ap_future);
+        if (DATA.Which_hydro == 1) {
+            /* execute rk steps */
+            AdvanceRK(tau, ap_prev, ap_current, ap_future);
+        } else if (DATA.Which_hydro == 2) {
+            /* call density frame solver */
+            AdvanceDF(tau, ap_prev, ap_current, ap_future);
+        } else {
+            music_message << "Which_hydro should be 1 or 2 "
+                          << "1: Default MUSIC "
+                          << "2: Density Frame";
+            music_message.flush("error");
+            exit(1);
+        }
 
         music_message << emoji::clock()
                       << " Done time step " << it << "/" << itmax
@@ -316,6 +328,12 @@ void Evolve::AdvanceRK(double tau, GridPointer &arena_prev, GridPointer &arena_c
             std::swap(arena_current, arena_future);
         }
     }  /* loop over rk_flag */
+}
+
+void Evolve::AdvanceDF(double tau, GridPointer &arena_prev, GridPointer &arena_current, GridPointer &arena_future) {
+    // control function for Density Frame time stepper
+    //arena_prev = arena_current;
+    density_frame.Run(tau, *arena_current);
 }
 
 // Cornelius freeze out  (C. Shen, 11/2014)

@@ -23,6 +23,12 @@ InitData read_in_parameters(std::string input_file) {
     if(tempinput != "empty") istringstream ( tempinput ) >> temp_echo_level;
     parameter_list.echo_level = temp_echo_level;
 
+    // Which_hydro:
+    int tempWhich_hydro = 1;
+    tempinput = Util::StringFind4(input_file, "Which_hydro");
+    if (tempinput != "empty") istringstream(tempinput) >> tempWhich_hydro;
+    parameter_list.Which_hydro = tempWhich_hydro;
+
     // Initial_profile:
     int tempInitial_profile = 1;
     tempinput = Util::StringFind4(input_file, "Initial_profile");

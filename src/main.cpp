@@ -5,6 +5,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <iostream>
+#include <petscdmda.h>
 
 #include "music.h"
 #include "music_logo.h"
@@ -28,7 +29,9 @@ int main(int argc, char *argv[]) {
 
     if (running_mode == 1 || running_mode == 2) {
         music_hydro.initialize_hydro();
+        PetscInitialize(NULL, NULL, NULL, NULL);
         music_hydro.run_hydro();
+        PetscFinalize();
     }
 
     if (running_mode == 1 || running_mode == 3 || running_mode == 4

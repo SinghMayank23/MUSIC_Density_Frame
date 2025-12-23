@@ -5,7 +5,7 @@ set(libname "music")
 set(exename "MUSIChydro")
 
 # require C++11
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -13,6 +13,18 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_HOME_DIRECTORY}")
 
 set(CMAKE_INSTALL_RPATH ${CMAKE_HOME_DIRECTORY})
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+execute_process ( COMMAND pkg-config PETSc --variable=ccompiler COMMAND tr -d '\n' OUTPUT_VARIABLE C_COMPILER)
+SET(CMAKE_C_COMPILER ${C_COMPILER})
+execute_process ( COMMAND pkg-config PETSc --variable=cxxcompiler COMMAND tr -d '\n' OUTPUT_VARIABLE CXX_COMPILER)
+if (CXX_COMPILER)
+  SET(CMAKE_CXX_COMPILER ${CXX_COMPILER})
+endif (CXX_COMPILER)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
+include_directories(${PETSC_INCLUDE_DIRS})
+include_directories(include)
 
 # Find GSL and openMP for this project:
 find_package(GSL)
@@ -59,18 +71,18 @@ option (link_with_lib "Link executable with the libarary" ON)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     if (KNL)
-        set(CMAKE_CXX_FLAGS "-vecabi=cmdtarget -debug inline-debug-info -fimf-use-svml -xmic-avx512 -qopt-report=5 -qopt-report-phase:vec ${OpenMP_CXX_FLAGS} -std=c++11 -fma -align -finline-functions -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
+        set(CMAKE_CXX_FLAGS "-vecabi=cmdtarget -debug inline-debug-info -fimf-use-svml -xmic-avx512 -qopt-report=5 -qopt-report-phase:vec ${OpenMP_CXX_FLAGS} -std=c++17 -fma -align -finline-functions -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
     else ()
-        set(CMAKE_CXX_FLAGS "-ipo -qopt-report=5 -qopt-report-phase:vec ${OpenMP_CXX_FLAGS} -std=c++11 -fimf-use-svml -fma -align -finline-functions -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
+        set(CMAKE_CXX_FLAGS "-ipo -qopt-report=5 -qopt-report-phase:vec ${OpenMP_CXX_FLAGS} -std=c++17 -fimf-use-svml -fma -align -finline-functions -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
     endif ()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${OpenMP_CXX_FLAGS} -std=c++11 -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
+    set(CMAKE_CXX_FLAGS "${OpenMP_CXX_FLAGS} -std=c++17 -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-    set(CMAKE_CXX_FLAGS "-std=c++11  -stdlib=libc++ -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
+    set(CMAKE_CXX_FLAGS "-std=c++17  -stdlib=libc++ -DDOCTEST_CONFIG_DISABLE -DNDEBUG")
 endif()
 
 if (unittest)
-    set(CMAKE_CXX_FLAGS "${OpenMP_CXX_FLAGS} -std=c++11 -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN")
+    set(CMAKE_CXX_FLAGS "${OpenMP_CXX_FLAGS} -std=c++17 -DDOCTEST_CONFIG_IMPLEMENT_WITH_MAIN")
 endif()
 
 string(APPEND CMAKE_CXX_FLAGS " -Wall")

@@ -30,6 +30,9 @@ set (SOURCES
     music_logo.cpp
     HydroinfoMUSIC.cpp
     transport_coeffs.cpp
+    density_frame.cpp
+    Vischydro.cpp
+    VischydroNode.cpp
     )
 if (GSL_FOUND)
     set(SOURCES ${SOURCES}
@@ -71,8 +74,10 @@ else (unittest)
     if (link_with_lib)
         add_executable (${exename} main.cpp)
         target_link_libraries (${exename} ${libname})
+        target_link_libraries(${exename} PkgConfig::PETSC)
     else (link_with_lib)
         add_executable (${exename} main.cpp ${SOURCES})
+        target_link_libraries(${exename} PkgConfig::PETSC)
         if (GSL_FOUND)
             target_link_libraries (${exename} ${GSL_LIBRARIES})
         endif (GSL_FOUND)
