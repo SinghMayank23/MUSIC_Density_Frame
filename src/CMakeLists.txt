@@ -31,8 +31,6 @@ set (SOURCES
     HydroinfoMUSIC.cpp
     transport_coeffs.cpp
     density_frame.cpp
-    Vischydro.cpp
-    VischydroNode.cpp
     )
 if (GSL_FOUND)
     set(SOURCES ${SOURCES}
@@ -42,14 +40,18 @@ if (GSL_FOUND)
         )
 endif()
 
+
 add_library(${libname} SHARED ${SOURCES})
+
+target_link_libraries(${libname} PUBLIC DFHydro)
+
 set(CompileFlags "")
 if (APPLE)
     set(CompileFlags "${CompileFlags} -DAPPLE")
 endif (APPLE)
 if (GSL_FOUND)
     set(CompileFlags "${CompileFlags} -DGSL")
-    target_link_libraries (${libname} ${GSL_LIBRARIES})
+    target_link_libraries (${libname} PUBLIC ${GSL_LIBRARIES})
 endif()
 set_target_properties (${libname} PROPERTIES COMPILE_FLAGS "${CompileFlags}")
 install(TARGETS ${libname} DESTINATION ${CMAKE_HOME_DIRECTORY})

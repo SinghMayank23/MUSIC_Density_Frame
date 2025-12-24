@@ -184,7 +184,7 @@ void Freeze::ComputeParticleSpectrum_pseudo_improved(InitData *DATA,
     // open files to write
     FILE *d_file;
     char *buf = new char[10];
-    sprintf (buf, "%d", 0);
+    snprintf (buf, 10, "%d", 0);
     
     char *specString=new char[30];
     strcpy(specString, "yptphiSpectra");

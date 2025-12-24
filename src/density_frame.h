@@ -7,21 +7,22 @@
 #include "grid.h"
 #include "reconst.h"
 #include "pretty_ostream.h"
-#include "Vischydro.hpp"
 #include "transport_coeffs.h"
 
-using namespace DFHydro;
+namespace DFHydro {
+   class Vischydro;
+   class EOS;
+};
 
 class Density_Frame {
  private:
     const InitData &DATA;
-    const EOS &eos;
-
-    TransportCoeffs transport_coeffs_;
-    Vischydro vischydro;
+    std::unique_ptr<DFHydro::Vischydro> vischydro;
+    std::unique_ptr<DFHydro::EOS> df_eos;
 
  public:
-    Density_Frame(const EOS &eosIn, const InitData &DATA_in);
+    Density_Frame(const ::EOS &eosIn, const InitData &DATA_in);
+    ~Density_Frame();
 
     void Run(double tau, SCGrid &arena_current);
 };

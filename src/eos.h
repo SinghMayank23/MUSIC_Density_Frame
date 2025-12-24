@@ -9,7 +9,7 @@
 //! This is a wrapper class for the equation of state
 class EOS {
  private:
-    const int eos_id;
+    const int eos_id = 0;
 
     std::unique_ptr<EOS_base> eos_ptr;
 

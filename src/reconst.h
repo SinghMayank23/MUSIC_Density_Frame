@@ -26,7 +26,7 @@ class Reconst {
     const int echo_level;
 
  public:
-    Reconst() = default;
+    Reconst() = delete;
     Reconst(const EOS &eos, const int echo_level_in);
 
     ReconstCell ReconstIt_shell(double tau, const TJbVec &tauq_vec,

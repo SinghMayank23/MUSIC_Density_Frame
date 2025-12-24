@@ -119,4 +119,6 @@ configure_file(
 )
 
 include_directories(${CMAKE_BINARY_DIR}/generated)
+
+add_subdirectory (extern/DFHydro)
 add_subdirectory (src)

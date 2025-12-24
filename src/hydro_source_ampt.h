@@ -28,7 +28,7 @@ class HydroSourceAMPT : public HydroSourceBase {
     std::vector<std::shared_ptr<parton>> parton_list_current_tau;
 
  public:
-    HydroSourceAMPT() = default;
+    HydroSourceAMPT() = delete;
     HydroSourceAMPT(const InitData &DATA_in);
     ~HydroSourceAMPT();
     
