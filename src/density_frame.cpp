@@ -63,7 +63,7 @@ Density_Frame::Density_Frame(const ::EOS &eosIn, const InitData &DATAIn)
 Density_Frame::~Density_Frame() {}
 
 // Initialize the vischydro petsc grid at every timestep
-void Density_Frame::Run(double tau, SCGrid &arena_current) {
+void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
 
   int local_ieta = 0;
 
@@ -90,7 +90,7 @@ void Density_Frame::Run(double tau, SCGrid &arena_current) {
       int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
 
       asol[iy][ix].e = std::max(
-          0.001, arena_current(local_ix, local_iy, local_ieta).epsilon);
+          0.0005, arena_current(local_ix, local_iy, local_ieta).epsilon);
       asol[iy][ix].u[0] = arena_current(local_ix, local_iy, local_ieta).u[1];
       asol[iy][ix].u[1] = arena_current(local_ix, local_iy, local_ieta).u[2];
 
@@ -102,7 +102,7 @@ void Density_Frame::Run(double tau, SCGrid &arena_current) {
   PetscCallVoid(DMDAVecRestoreArray(domain, vischydro->solution, &asol));
   PetscCallVoid(DMDAVecRestoreArray(cdomain, vischydro->coordinates, &xy));
 
-  vischydro->solve(tau, tau + DATA.delta_tau, DATA.delta_tau);
+  vischydro->solve(tau, tau_next, DATA.delta_tau);
 
   PetscCallVoid(DMDAVecGetArray(cdomain, vischydro->coordinates, &xy));
   PetscCallVoid(DMDAVecGetArray(domain, vischydro->solution, &asol));

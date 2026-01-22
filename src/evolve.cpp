@@ -93,7 +93,8 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
     int it = 0;
     double eps_max_cur = -1.;
     const double max_allowed_e_increase_factor = 2.;
-    for (it = 0; it <= itmax; it++) {
+    //for (it = 0; it <= itmax; it++) {
+    while (it <= itmax) {
         tau = tau0 + dt*it;
 
         if (hydro_source_terms_ptr) {
@@ -250,13 +251,28 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
             }
         }
 
+        int it_increment = 0;
         // all the evolution are at here !!!
         if (DATA.Which_hydro == 1) {
             /* execute rk steps */
             AdvanceRK(tau, ap_prev, ap_current, ap_future);
+            it_increment = 1;
         } else if (DATA.Which_hydro == 2) {
             /* call density frame solver */
-            AdvanceDF(tau, ap_prev, ap_current, ap_future);
+            int next_it;
+            for (next_it = it+1; next_it <= itmax; next_it++) {
+                if (next_it%Nskip_timestep == 0) {
+                    it_increment = next_it - it;
+                    break;
+                }
+                if ((next_it-iFreezeStart)%facTau == 0) {
+                    it_increment = next_it - it;
+                    break;
+                }
+            }
+            if (next_it == itmax) it_increment = itmax - it;
+            double tau_next = tau0 + dt*next_it;
+            AdvanceDF(tau, tau_next, ap_prev, ap_current, ap_future);
         } else {
             music_message << "Which_hydro should be 1 or 2 "
                           << "1: Default MUSIC "
@@ -291,6 +307,7 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
                 break;
             }
         }
+        it += it_increment;
     }
     if (it < itmax) {
         music_message.info("Finished.");
@@ -330,10 +347,10 @@ void Evolve::AdvanceRK(double tau, GridPointer &arena_prev, GridPointer &arena_c
     }  /* loop over rk_flag */
 }
 
-void Evolve::AdvanceDF(double tau, GridPointer &arena_prev, GridPointer &arena_current, GridPointer &arena_future) {
+void Evolve::AdvanceDF(double tau, double tau_next, GridPointer &arena_prev, GridPointer &arena_current, GridPointer &arena_future) {
     // control function for Density Frame time stepper
     //arena_prev = arena_current;
-    density_frame.Run(tau, *arena_current);
+    density_frame.Run(tau, tau_next, *arena_current);
 }
 
 // Cornelius freeze out  (C. Shen, 11/2014)
