@@ -102,7 +102,9 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
   PetscCallVoid(DMDAVecRestoreArray(domain, vischydro->solution, &asol));
   PetscCallVoid(DMDAVecRestoreArray(cdomain, vischydro->coordinates, &xy));
 
-  vischydro->solve(tau, tau_next, DATA.delta_tau);
+  //double time_step = std::max(DATA.delta_tau, 0.1*DATA.delta_x);
+  double time_step = DATA.delta_tau;
+  vischydro->solve(tau, tau_next, time_step);
 
   PetscCallVoid(DMDAVecGetArray(cdomain, vischydro->coordinates, &xy));
   PetscCallVoid(DMDAVecGetArray(domain, vischydro->solution, &asol));
