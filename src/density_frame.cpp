@@ -91,7 +91,7 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
       int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
 
       DFHydro::VischydroNode nLF;
-      double eps = arena_current(local_ix, local_iy, local_ieta).epsilon;
+      double eps = std::max(0.0005, arena_current(local_ix, local_iy, local_ieta).epsilon);
       double ux  = arena_current(local_ix, local_iy, local_ieta).u[1];
       double uy  = arena_current(local_ix, local_iy, local_ieta).u[2];
       double pixxS = arena_current(local_ix, local_iy, local_ieta).Wmunu[4];
