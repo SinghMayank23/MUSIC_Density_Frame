@@ -1,3 +1,3 @@
 [submodule "extern/DFHydro"]
 	path = extern/DFHydro
-	url = https://github.com/bhamburejay/2dflow.git
+	url = git@github.com:bhamburejay/2dflow.git
