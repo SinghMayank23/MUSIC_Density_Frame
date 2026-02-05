@@ -84,15 +84,33 @@ void Density_Frame::Run(double tau, SCGrid &arena_current) {
 
   for (PetscInt iy = ys; iy < ys + ym; iy++) {
     for (PetscInt ix = xs; ix < xs + xm; ix++) {
+      
       double x = xy[iy][ix].x;
       double y = xy[iy][ix].y;
       int local_ix = ((x + DATA.x_size / 2.) / DATA.delta_x + 0.5);
       int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
 
-      asol[iy][ix].e = std::max(
-          0.001, arena_current(local_ix, local_iy, local_ieta).epsilon);
-      asol[iy][ix].u[0] = arena_current(local_ix, local_iy, local_ieta).u[1];
-      asol[iy][ix].u[1] = arena_current(local_ix, local_iy, local_ieta).u[2];
+      DFHydro::VischydroNode nLF;
+      double eps = arena_current(local_ix, local_iy, local_ieta).epsilon;
+      double ux  = arena_current(local_ix, local_iy, local_ieta).u[1];
+      double uy  = arena_current(local_ix, local_iy, local_ieta).u[2];
+      double pixxS = arena_current(local_ix, local_iy, local_ieta).Wmunu[4];
+      double pixyS = arena_current(local_ix, local_iy, local_ieta).Wmunu[5];
+      double piyyS = arena_current(local_ix, local_iy, local_ieta).Wmunu[7];
+      double pinnS = arena_current(local_ix, local_iy, local_ieta).Wmunu[9]/(tau*tau);
+      double piB   = arena_current(local_ix, local_iy, local_ieta).pi_b;
+
+      nLF.setstate_LF(*df_eos, eps, ux, uy, pixxS, pixyS, piyyS, pinnS, piB);
+
+      DFHydro::VischydroNode nDF;
+      vhnode_LFtoDF(*df_eos, nLF, nDF);
+
+      asol[iy][ix] = nDF;
+
+      //asol[iy][ix].e = std::max(
+      //    0.001, arena_current(local_ix, local_iy, local_ieta).epsilon);
+      //asol[iy][ix].u[0] = arena_current(local_ix, local_iy, local_ieta).u[1];
+      //asol[iy][ix].u[1] = arena_current(local_ix, local_iy, local_ieta).u[2];
 
       // Fill in the rest of the VischydroNode fields based on the EOS
       vhnode_fill(asol[iy][ix], *vischydro->eos);
@@ -114,14 +132,48 @@ void Density_Frame::Run(double tau, SCGrid &arena_current) {
       int local_ix = ((x + DATA.x_size / 2.) / DATA.delta_x + 0.5);
       int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
 
-      // This is the same as in simple_initialize, but could also use xy array
-      arena_current(local_ix, local_iy, local_ieta).epsilon = asol[iy][ix].e;
-      arena_current(local_ix, local_iy, local_ieta).u[1] = asol[iy][ix].u[0];
-      arena_current(local_ix, local_iy, local_ieta).u[2] = asol[iy][ix].u[1];
+      double eps, ux, uy, pixxS, pixyS, piyyS, pinnS, piB;
+      DFHydro::VischydroNode nDF;
+      nDF = asol[iy][ix];
+      DFHydro::VischydroNode nLF;
+      vhnode_DFtoLF(*df_eos, nDF, nLF);
+      nLF.getstate_LF(*df_eos, eps, ux, uy, pixxS, pixyS, piyyS, pinnS, piB);
+
+      double utau = sqrt(1. + ux * ux + uy * uy);
+
+      arena_current(local_ix, local_iy, local_ieta).epsilon = eps;
+      arena_current(local_ix, local_iy, local_ieta).u[1] = ux;
+      arena_current(local_ix, local_iy, local_ieta).u[2] = uy;
       arena_current(local_ix, local_iy, local_ieta).u[3] = 0.;
-      arena_current(local_ix, local_iy, local_ieta).u[0] =
-          sqrt(1. + asol[iy][ix].u[0] * asol[iy][ix].u[0] +
-               asol[iy][ix].u[1] * asol[iy][ix].u[1]);
+      arena_current(local_ix, local_iy, local_ieta).u[0] = utau;
+
+      double pietaetaS =  (2.*(  ux*uy*pixyS - (utau*utau - ux*ux)*pixxS
+                       - (utau*utau - uy*uy)*piyyS)
+                       /(utau*utau));
+      double pitauxS = (1./utau*(  pixxS*ux + pixyS*uy));
+      double pitauyS = (1./utau*(  pixyS*ux + piyyS*uy));
+      double pitautauS = (1./utau* (pitauxS*ux + pitauyS*uy));
+
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[0] = pitautauS;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[1] = pitauxS;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[2] = pitauyS;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[3] = 0.;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[4] = pixxS;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[5] = pixyS;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[6] = 0.;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[7] = piyyS;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[8] = 0.;
+      arena_current(local_ix, local_iy, local_ieta).Wmunu[9] = pietaetaS;
+
+      arena_current(local_ix, local_iy, local_ieta).pi_b = piB;
+
+      //arena_current(local_ix, local_iy, local_ieta).epsilon = asol[iy][ix].e;
+      //arena_current(local_ix, local_iy, local_ieta).u[1] = asol[iy][ix].u[0];
+      //arena_current(local_ix, local_iy, local_ieta).u[2] = asol[iy][ix].u[1];
+      //arena_current(local_ix, local_iy, local_ieta).u[3] = 0.;
+      //arena_current(local_ix, local_iy, local_ieta).u[0] =
+      //    sqrt(1. + asol[iy][ix].u[0] * asol[iy][ix].u[0] +
+      //         asol[iy][ix].u[1] * asol[iy][ix].u[1]);
     }
   }
   PetscCallVoid(DMDAVecRestoreArray(cdomain, vischydro->coordinates, &xy));

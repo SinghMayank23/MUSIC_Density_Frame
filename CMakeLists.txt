@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.4)
-project(MUSIChydro VERSION 2.0 LANGUAGES CXX)
 
 set(libname "music")
 set(exename "MUSIChydro")
@@ -20,6 +19,7 @@ execute_process ( COMMAND pkg-config PETSc --variable=cxxcompiler COMMAND tr -d 
 if (CXX_COMPILER)
   SET(CMAKE_CXX_COMPILER ${CXX_COMPILER})
 endif (CXX_COMPILER)
+project(MUSIChydro VERSION 2.0 LANGUAGES CXX)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
