@@ -97,7 +97,7 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
       double pixxS = arena_current(local_ix, local_iy, local_ieta).Wmunu[4];
       double pixyS = arena_current(local_ix, local_iy, local_ieta).Wmunu[5];
       double piyyS = arena_current(local_ix, local_iy, local_ieta).Wmunu[7];
-      double pinnS = arena_current(local_ix, local_iy, local_ieta).Wmunu[9]/(tau*tau);
+      double pinnS = arena_current(local_ix, local_iy, local_ieta).Wmunu[9];
       double piB   = arena_current(local_ix, local_iy, local_ieta).pi_b;
 
       nLF.setstate_LF(*df_eos, eps, ux, uy, pixxS, pixyS, piyyS, pinnS, piB);
