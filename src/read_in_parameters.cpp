@@ -23,6 +23,12 @@ InitData read_in_parameters(std::string input_file) {
     if(tempinput != "empty") istringstream ( tempinput ) >> temp_echo_level;
     parameter_list.echo_level = temp_echo_level;
 
+    //DF_pedestal
+    double temp_DF_pedestal = 0.0005;
+    tempinput = Util::StringFind4(input_file, "DF_pedestal");
+    if (tempinput != "empty") istringstream(tempinput) >> temp_DF_pedestal;
+    parameter_list.DF_pedestal = temp_DF_pedestal;
+
     // Which_hydro:
     int tempWhich_hydro = 1;
     tempinput = Util::StringFind4(input_file, "Which_hydro");

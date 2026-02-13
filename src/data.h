@@ -55,6 +55,7 @@ typedef struct init_data {
     double yL_frac;
 
     int Which_hydro;         //! Which hydro formulation to use: 1 Default MUSIC; 2 Density Frame
+    double DF_pedestal;      //!< pedestal value for density frame [1/fm^4]
     int Initial_profile;    //! type of initial condition
     int initializeEntropy;  //! flag to initial entropy or energy density
 
