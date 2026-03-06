@@ -349,7 +349,7 @@ void Evolve::AdvanceRK(double tau, GridPointer &arena_prev, GridPointer &arena_c
 
 void Evolve::AdvanceDF(double tau, double tau_next, GridPointer &arena_prev, GridPointer &arena_current, GridPointer &arena_future) {
     // control function for Density Frame time stepper
-    //arena_prev = arena_current;
+    //arena_prev = std::copy(arena_current);
     density_frame.Run(tau, tau_next, *arena_current);
 }
 
