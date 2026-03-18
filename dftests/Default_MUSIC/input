@@ -17,7 +17,7 @@ mode 2   # MUSIC running mode
 ###################################
 # parameters for initial conditions
 ###################################
-Which_hydro 1
+Which_hydro 1                   # 1: Default MUSIC; 2: Density Frame
 Initial_profile 92               # type of initial condition
                                 # 0: for Gubser flow test
                                 # 1: for 1+1D test
