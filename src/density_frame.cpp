@@ -23,7 +23,7 @@ using Util::map_2d_idx_to_1d;
 class DFHydroMusicEOS : public DFHydro::EOS {
 public:
   DFHydroMusicEOS(const ::EOS &eosIn, const InitData &DATA_in)
-      : eos(eosIn), transport(eosIn, DATA_in) {}
+      : eos(eosIn), DATA(DATA_in), transport(eosIn, DATA_in) {}
 
   double get_cs2(double e, double rhob) const override {
     return (eos.get_cs2(e, rhob));
@@ -38,14 +38,23 @@ public:
     return (eos.get_entropy(e, rhob));
   }
   double get_eta_by_s(double T, double muB) const override {
-    return (transport.get_eta_over_s(T, muB));
+    if (DATA.viscosity_flag == 0 || DATA.turn_on_shear == 0) {
+        return(0.);
+    } else {
+        return (transport.get_eta_over_s(T, muB));
+    }
   }
   double get_zeta_by_s(double T, double muB) const override {
-    return (transport.get_zeta_over_s(T));
+    if (DATA.viscosity_flag == 0 || DATA.turn_on_bulk == 0) {
+        return(0.);
+    } else {
+        return (transport.get_zeta_over_s(T));
+    }
   }
 
 private:
   const ::EOS &eos;
+  const InitData &DATA;
   TransportCoeffs transport;
 };
 Density_Frame::Density_Frame(const ::EOS &eosIn, const InitData &DATAIn)

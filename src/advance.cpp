@@ -1,3 +1,4 @@
+
 // Copyright 2011 @ Bjoern Schenke, Sangyong Jeon, and Charles Gale
 
 #ifdef _OPENMP
