@@ -23,7 +23,7 @@ using Util::hbarc;
 
 Init::Init(const EOS &eosIn, InitData &DATA_in,
            std::shared_ptr<HydroSourceBase> hydro_source_ptr_in) :
-    DATA(DATA_in), eos(eosIn){
+    DATA(DATA_in), eos(eosIn), transport_coeffs_(eosIn, DATA_in) {
     hydro_source_terms_ptr = hydro_source_ptr_in;
 }
 
@@ -48,6 +48,35 @@ void Init::InitArena(SCGrid &arena_prev, SCGrid &arena_current,
         music_message << "nx=" << DATA.nx << ", ny=" << DATA.ny;
         music_message << "dx=" << DATA.delta_x << ", dy=" << DATA.delta_y;
         music_message << "neta=" << DATA.neta << ", deta=" << DATA.delta_eta;
+        music_message.flush("info");
+    } else if (   DATA.Initial_profile == 2) {
+        music_message.info(DATA.initName);
+        ifstream profile(DATA.initName.c_str());
+        if (!profile.is_open()) {
+            music_message << "Initial profile: " << DATA.initName
+                          << " not found.";
+            music_message.flush("error");
+            exit(1);
+        }
+        std::string dummy;
+        int nx, ny, neta;
+        double deta, dx, dy, dummy2;
+        // read the first line with general info
+        profile >> dummy >> dummy >> dummy2
+                >> dummy >> neta >> dummy >> nx >> dummy >> ny
+                >> dummy >> deta >> dummy >> dx >> dummy >> dy;
+        profile.close();
+        music_message << "Using Initial_profile=" << DATA.Initial_profile
+                      << ". Overwriting lattice dimensions:";
+        DATA.nx = nx;
+        DATA.ny = ny;
+        DATA.delta_x = dx;
+        DATA.delta_y = dy;
+
+        music_message << "neta=" << DATA.neta
+                      << ", nx=" << DATA.nx << ", ny=" << DATA.ny;
+        music_message << "deta=" << DATA.delta_eta << ", dx=" << DATA.delta_x
+                      << ", dy=" << DATA.delta_y;
         music_message.flush("info");
     } else if (DATA.Initial_profile == 8) {
         music_message.info(DATA.initName);
@@ -201,6 +230,17 @@ void Init::InitTJb(SCGrid &arena_prev, SCGrid &arena_current) {
         // code test in 1+1 D vs Monnai's results
         music_message.info(" Perform 1+1D test vs Monnai's results... ");
         initial_1p1D_eta(arena_prev, arena_current);
+    } else if (   DATA.Initial_profile == 2) {
+        // read in the profile from file
+        // - Optical Glauber from file with NS initial shear viscous tensor
+        music_message.info(" ----- information on initial distribution -----");
+        music_message << "file name used: " << DATA.initName;
+        music_message.flush("info");
+
+        #pragma omp parallel for
+        for (int ieta = 0; ieta < arena_current.nEta(); ieta++) {
+            Initial_OpticalGlauber_with_NS_shear(ieta, arena_prev, arena_current);
+        }
     } else if (DATA.Initial_profile == 8) {
         // read in the profile from file
         // - IPGlasma initial conditions with initial flow
@@ -549,6 +589,152 @@ void Init::initial_IPGlasma_XY(int ieta, SCGrid &arena_prev,
             arena_current(ix, iy, ieta).u[2] = temp_profile_uy[ix][iy];
             arena_current(ix, iy, ieta).u[3] = 0.0;
 
+            arena_prev(ix, iy, ieta) = arena_current(ix, iy, ieta);
+        }
+    }
+}
+
+void Init::Initial_OpticalGlauber_with_NS_shear(int ieta, SCGrid &arena_prev, SCGrid &arena_current) {
+    double tau0 = DATA.tau0;
+    ifstream profile(DATA.initName.c_str());
+    double rhob = 0.0;
+
+    std::string dummy;
+    // read the information line
+    std::getline(profile, dummy);
+
+    const int nx = arena_current.nX();
+    const int ny = arena_current.nY();
+    std::vector<double> temp_profile_ed(nx*ny, 0.0);
+    std::vector<double> temp_profile_utau(nx*ny, 0.0);
+    std::vector<double> temp_profile_ux(nx*ny, 0.0);
+    std::vector<double> temp_profile_uy(nx*ny, 0.0);
+    std::vector<double> temp_profile_ueta(nx*ny, 0.0);
+    std::vector<double> temp_profile_pitautau(nx*ny, 0.0);
+    std::vector<double> temp_profile_pitaux(nx*ny, 0.0);
+    std::vector<double> temp_profile_pitauy(nx*ny, 0.0);
+    std::vector<double> temp_profile_pitaueta(nx*ny, 0.0);
+    std::vector<double> temp_profile_pixx(nx*ny, 0.0);
+    std::vector<double> temp_profile_pixy(nx*ny, 0.0);
+    std::vector<double> temp_profile_pixeta(nx*ny, 0.0);
+    std::vector<double> temp_profile_piyy(nx*ny, 0.0);
+    std::vector<double> temp_profile_piyeta(nx*ny, 0.0);
+    std::vector<double> temp_profile_pietaeta(nx*ny, 0.0);
+
+    double eta = (DATA.delta_eta)*(ieta) - (DATA.eta_size)/2.0;
+    double eta_envelop_ed = eta_profile_plateau(eta, DATA.eta_flat/2.0,
+                                                DATA.eta_fall_off);
+    int entropy_flag = DATA.initializeEntropy;
+
+    // read the one slice
+    double density, dummy1, dummy2, dummy3;
+    double ux, uy, utau, ueta;
+    double pitautau, pitaux, pitauy, pitaueta;
+    double pixx, pixy, pixeta, piyy, piyeta, pietaeta;
+    for (int ix = 0; ix < nx; ix++) {
+        for (int iy = 0; iy < ny; iy++) {
+            int idx = iy + ix*ny;
+            std::getline(profile, dummy);
+            std::stringstream ss(dummy);
+            ss >> dummy1 >> dummy2 >> dummy3
+               >> density >> utau >> ux >> uy >> ueta
+               >> pitautau >> pitaux >> pitauy >> pitaueta
+               >> pixx >> pixy >> pixeta >> piyy >> piyeta >> pietaeta;
+            ueta = ueta*tau0;
+	    double epsilon = 0.;
+            if (entropy_flag == 0) {
+                epsilon = (density*eta_envelop_ed
+                           *DATA.sFactor/hbarc);  // 1/fm^4
+            } else {
+                double local_sd = (density*DATA.sFactor
+                                   *eta_envelop_ed);
+                epsilon = eos.get_s2e(local_sd, rhob);
+            }
+            epsilon = std::max(Util::small_eps, epsilon);
+            temp_profile_ed    [idx] = epsilon;
+            temp_profile_ux    [idx] = 0.;
+            temp_profile_uy    [idx] = 0.;
+            temp_profile_ueta  [idx] = 0.;
+            temp_profile_utau  [idx] = 1.;
+
+	    double temperature = eos.get_temperature(epsilon, 0.);
+            double shear_to_s = transport_coeffs_.get_eta_over_s(temperature, 0.);
+	    double entropy = eos.get_entropy(epsilon, 0.);
+            double eta = shear_to_s*entropy;
+
+            temp_profile_pixx  [idx] = 2.*eta/(3.*tau0);
+            temp_profile_pixy  [idx] = 0.;
+            temp_profile_pixeta[idx] = 0.;
+            temp_profile_piyy  [idx] = 2.*eta/(3.*tau0);
+            temp_profile_piyeta[idx] = 0.;
+
+            utau = temp_profile_utau[idx];
+            temp_profile_pietaeta[idx] = (
+                (2.*(  ux*uy*temp_profile_pixy[idx]
+                     + ux*ueta*temp_profile_pixeta[idx]
+                     + uy*ueta*temp_profile_piyeta[idx])
+                 - (utau*utau - ux*ux)*temp_profile_pixx[idx]
+                 - (utau*utau - uy*uy)*temp_profile_piyy[idx])
+                /(utau*utau - ueta*ueta));
+            temp_profile_pitaux  [idx] = (1./utau
+                *(  temp_profile_pixx[idx]*ux
+                  + temp_profile_pixy[idx]*uy
+                  + temp_profile_pixeta[idx]*ueta));
+            temp_profile_pitauy  [idx] = (1./utau
+                *(  temp_profile_pixy[idx]*ux
+                  + temp_profile_piyy[idx]*uy
+                  + temp_profile_piyeta[idx]*ueta));
+            temp_profile_pitaueta[idx] = (1./utau
+                *(  temp_profile_pixeta[idx]*ux
+                  + temp_profile_piyeta[idx]*uy
+                  + temp_profile_pietaeta[idx]*ueta));
+            temp_profile_pitautau[idx] = (1./utau
+                *(  temp_profile_pitaux[idx]*ux
+                  + temp_profile_pitauy[idx]*uy
+                  + temp_profile_pitaueta[idx]*ueta));
+            if (ix == 0 && iy == 0) {
+                DATA.x_size = -dummy2*2;
+                DATA.y_size = -dummy3*2;
+                if (omp_get_thread_num() == 0) {
+                    music_message << "eta_size=" << DATA.eta_size
+                                  << ", x_size=" << DATA.x_size
+                                  << ", y_size=" << DATA.y_size;
+                    music_message.flush("info");
+                }
+            }
+        }
+    }
+    profile.close();
+
+    for (int ix = 0; ix < nx; ix++) {
+        for (int iy = 0; iy< ny; iy++) {
+            int idx = iy + ix*ny;
+
+            arena_current(ix, iy, ieta).epsilon = temp_profile_ed[idx];
+            arena_current(ix, iy, ieta).rhob = rhob;
+
+            arena_current(ix, iy, ieta).Wmunu[0] = temp_profile_pitautau[idx];
+            arena_current(ix, iy, ieta).Wmunu[1] = temp_profile_pitaux[idx];
+            arena_current(ix, iy, ieta).Wmunu[2] = temp_profile_pitauy[idx];
+            arena_current(ix, iy, ieta).Wmunu[3] = temp_profile_pitaueta[idx];
+            arena_current(ix, iy, ieta).Wmunu[4] = temp_profile_pixx[idx];
+            arena_current(ix, iy, ieta).Wmunu[5] = temp_profile_pixy[idx];
+            arena_current(ix, iy, ieta).Wmunu[6] = temp_profile_pixeta[idx];
+            arena_current(ix, iy, ieta).Wmunu[7] = temp_profile_piyy[idx];
+            arena_current(ix, iy, ieta).Wmunu[8] = temp_profile_piyeta[idx];
+            arena_current(ix, iy, ieta).Wmunu[9] = temp_profile_pietaeta[idx];
+
+	    arena_current(ix, iy, ieta).pi_b = 0.;
+
+            if (DATA.viscosity_flag != 0 && DATA.turn_on_bulk != 0) {
+		double epsilon = temp_profile_ed[idx];
+	        double temperature = eos.get_temperature(epsilon, 0.);
+                double zeta_to_s = transport_coeffs_.get_zeta_over_s(temperature);
+	        double entropy = eos.get_entropy(epsilon, 0.);
+                double zeta = zeta_to_s*entropy;
+
+                arena_current(ix, iy, ieta).pi_b = -1.*zeta/DATA.tau0;
+            }
             arena_prev(ix, iy, ieta) = arena_current(ix, iy, ieta);
         }
     }

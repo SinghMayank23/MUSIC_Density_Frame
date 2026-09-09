@@ -119,7 +119,7 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
         } else {
           pressure = df_eos->get_pressure(DATA.DF_pedestal, rhob);
 
-          E_DF = DATA.DF_pedestal + pressure;
+          E_DF = DATA.DF_pedestal;// + pressure;
           Mx_DF = 0.;
           My_DF = 0.;
         }
@@ -171,7 +171,7 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
         arena_current(local_ix, local_iy, local_ieta).u[3] = 0.;
         arena_current(local_ix, local_iy, local_ieta).u[0] = utau;
 
-        double pietaetaS =  (2.*(  ux*uy*pixyS - (utau*utau - ux*ux)*pixxS
+        double pietaetaS =  ((2.*ux*uy*pixyS - (utau*utau - ux*ux)*pixxS
                        - (utau*utau - uy*uy)*piyyS)
                        /(utau*utau));
         double pitauxS = (1./utau*(  pixxS*ux + pixyS*uy));
