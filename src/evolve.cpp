@@ -271,6 +271,7 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
                 }
             }
             if (next_it == itmax) it_increment = itmax - it;
+	    if (it_increment <= 0) break;
             double tau_next = tau0 + dt*next_it;
             AdvanceDF(tau, tau_next, ap_prev, ap_current, ap_future);
         } else {

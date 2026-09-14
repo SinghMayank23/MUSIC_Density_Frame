@@ -62,10 +62,10 @@ Density_Frame::Density_Frame(const ::EOS &eosIn, const InitData &DATAIn)
   df_eos = std::make_unique<DFHydroMusicEOS>(eosIn, DATA);
   int nx = DATA.nx;
   int ny = DATA.ny;
-  double xmin = -1. * DATA.x_size / 2.;
-  double xmax = DATA.x_size / 2.;
-  double ymin = -1. * DATA.y_size / 2.;
-  double ymax = DATA.y_size / 2.;
+  double xmin = -0.5 * DATA.x_size;
+  double ymin = -0.5 * DATA.y_size;
+  double xmax = xmin + DATA.nx * DATA.delta_x;
+  double ymax = ymin + DATA.ny * DATA.delta_y;
   vischydro = std::make_unique<DFHydro::Vischydro>(nx, xmin, xmax, ny, ymin,
                                                    ymax, df_eos.get());
 
@@ -89,11 +89,13 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
   if (tau == DATA.tau0) {
     for (PetscInt iy = ys; iy < ys + ym; iy++) {
       for (PetscInt ix = xs; ix < xs + xm; ix++) {
-      
-        double x = xy[iy][ix].x;
-        double y = xy[iy][ix].y;
-        int local_ix = ((x + DATA.x_size / 2.) / DATA.delta_x + 0.5);
-        int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
+     
+	int local_ix = ix;
+        int local_iy = iy;	
+        //double x = xy[iy][ix].x;
+        //double y = xy[iy][ix].y;
+        //int local_ix = ((x + DATA.x_size / 2.) / DATA.delta_x + 0.5);
+        //int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
 
         DFHydro::VischydroNode nLF;
         DFHydro::VischydroNode nDF;
@@ -149,10 +151,12 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
   DMDAGetCorners(vischydro->domain, &xs, &ys, NULL, &xm, &ym, NULL);
   for (PetscInt iy = ys; iy < ys + ym; iy++) {
     for (PetscInt ix = xs; ix < xs + xm; ix++) {
-      double x = xy[iy][ix].x;
-      double y = xy[iy][ix].y;
-      int local_ix = ((x + DATA.x_size / 2.) / DATA.delta_x + 0.5);
-      int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
+      int local_ix = ix;
+      int local_iy = iy;
+      //double x = xy[iy][ix].x;
+      //double y = xy[iy][ix].y;
+      //int local_ix = ((x + DATA.x_size / 2.) / DATA.delta_x + 0.5);
+      //int local_iy = ((y + DATA.y_size / 2.) / DATA.delta_y + 0.5);
 
       double eps, ux, uy, pixxS, pixyS, piyyS, pinnS, piB;
       DFHydro::VischydroNode nDF;
