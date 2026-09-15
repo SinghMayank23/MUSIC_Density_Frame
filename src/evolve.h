@@ -49,7 +49,7 @@ class Evolve {
     void AdvanceRK(double tau, GridPointer &arena_prev,
                    GridPointer &arena_current, GridPointer &arena_future);
 
-    void AdvanceDF(double tau, double tau_next, GridPointer &arena_prev,
+    void AdvanceDF(double tau, double tau_next, int it_increment, GridPointer &arena_prev,
                    GridPointer &arena_current, GridPointer &arena_future);
 
     int FreezeOut_equal_tau_Surface(double tau, SCGrid &arena_current);

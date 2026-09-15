@@ -273,7 +273,7 @@ int Evolve::EvolveIt(SCGrid &arena_prev, SCGrid &arena_current,
             if (next_it == itmax) it_increment = itmax - it;
 	    if (it_increment <= 0) break;
             double tau_next = tau0 + dt*next_it;
-            AdvanceDF(tau, tau_next, ap_prev, ap_current, ap_future);
+            AdvanceDF(tau, tau_next, it_increment, ap_prev, ap_current, ap_future);
         } else {
             music_message << "Which_hydro should be 1 or 2 "
                           << "1: Default MUSIC "
@@ -348,10 +348,10 @@ void Evolve::AdvanceRK(double tau, GridPointer &arena_prev, GridPointer &arena_c
     }  /* loop over rk_flag */
 }
 
-void Evolve::AdvanceDF(double tau, double tau_next, GridPointer &arena_prev, GridPointer &arena_current, GridPointer &arena_future) {
+void Evolve::AdvanceDF(double tau, double tau_next, int it_increment, GridPointer &arena_prev, GridPointer &arena_current, GridPointer &arena_future) {
     // control function for Density Frame time stepper
     //arena_prev = std::copy(arena_current);
-    density_frame.Run(tau, tau_next, *arena_current);
+    density_frame.Run(tau, tau_next, it_increment, *arena_current);
 }
 
 // Cornelius freeze out  (C. Shen, 11/2014)

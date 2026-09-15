@@ -33,7 +33,7 @@ class Density_Frame {
     Density_Frame(const ::EOS &eosIn, const InitData &DATA_in);
     ~Density_Frame();
 
-    void Run(double tau, double tau_next, SCGrid &arena_current);
+    void Run(double tau, double tau_next, int nsteps, SCGrid &arena_current);
 
    
 };

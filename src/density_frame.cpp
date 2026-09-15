@@ -75,7 +75,7 @@ Density_Frame::~Density_Frame() {}
 
 // Initialize the vischydro petsc grid at every timestep
 // arena_future stores the DF frame values
-void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
+void Density_Frame::Run(double tau, double tau_next, int nsteps, SCGrid &arena_current) {
 
   int local_ieta = 0;  
 
@@ -144,7 +144,7 @@ void Density_Frame::Run(double tau, double tau_next, SCGrid &arena_current) {
 
   //double time_step = std::max(DATA.delta_tau, 0.1*DATA.delta_x);
   double time_step = DATA.delta_tau;
-  vischydro->solve(tau, tau_next, time_step);
+  vischydro->solve(tau, tau_next, nsteps, time_step);
 
   PetscCallVoid(DMDAVecGetArray(vischydro->cdomain, vischydro->coordinates, &xy));
   PetscCallVoid(DMDAVecGetArray(vischydro->domain, vischydro->solution, &asol));
