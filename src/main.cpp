@@ -29,7 +29,8 @@ int main(int argc, char *argv[]) {
 
     if (running_mode == 1 || running_mode == 2) {
         music_hydro.initialize_hydro();
-        PetscInitialize(NULL, NULL, NULL, NULL);
+        //PetscInitialize(NULL, NULL, NULL, NULL);
+        PetscInitialize(&argc, &argv, NULL, NULL);
         music_hydro.run_hydro();
         PetscFinalize();
     }

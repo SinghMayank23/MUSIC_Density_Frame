@@ -195,9 +195,9 @@ void Density_Frame::Run(double tau, double tau_next, int nsteps, SCGrid &arena_c
 
         arena_current(local_ix, local_iy, local_ieta).pi_b = piB;
       } else {
-        if (nDF.e > DATA.DF_pedestal) {
-          double local_temp = df_eos->get_temperature(nDF.e, 0.);
-          music_message << "DF energy exceeds pedestal at tau=" << tau_next << ", ix=" << local_ix << ", iy=" << local_iy << ", temperature=" << local_temp*hbarc << " GeV";
+        double local_temp = df_eos->get_temperature(nDF.e, 0.);
+        if (local_temp*hbarc >= 0.1) {
+          music_message << "Conversion to LF failed at tau=" << tau_next << ", ix=" << local_ix << ", iy=" << local_iy << ", temperature=" << local_temp*hbarc << " GeV";
           music_message.flush("warning");
         }
         arena_current(local_ix, local_iy, local_ieta).epsilon = asol[iy][ix].e;
